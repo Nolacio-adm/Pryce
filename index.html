@@ -37,34 +37,41 @@
         });
 
         // Função de Envio Corrigida para evitar CORS
-async function enviarCodigo(codigo) {
+function enviarCodigo(codigo) {
     if (!codigo) return;
     const resultDiv = document.getElementById('result');
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = "Buscando...";
 
-    const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwfhj30NWTl2vXea_mqFAO21lo9s1yiLJt0S5YCDAUhq9JKEyar6qNL_p4DKO-UZCSE/exec"; 
+    const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwfhj30NWTl2vXea_mqFAO21lo9s1yiLJt0S5YCDAUhq9JKEyar6qNL_p4DKO-UZCSE/exec";
 
-    try {
-        // Enviar como um formulário simples evita o "pre-flight" do CORS
-        const response = await fetch(URL_SCRIPT + "?barcode=" + encodeURIComponent(codigo.trim()), {
-            method: "GET", // Mudamos para GET para testar se o Google aceita melhor
-            mode: "cors"
-        });
-        
-        const res = await response.json();
-        
-        if(res.status === "erro") {
-            resultDiv.innerHTML = "❌ Não cadastrado.";
-            resultDiv.style.color = "red";
-        } else {
-            resultDiv.className = 'success';
-            resultDiv.innerHTML = `Produto: ${res.nome}<br>Valor: R$ ${res.preco}`;
-        }
-    } catch (error) {
-        // Se o erro persistir, o problema é a Implantação do Google
-        resultDiv.innerHTML = "Erro de CORS. Verifique a Implantação.";
-        console.error(error);
+    // Remove qualquer script de consulta anterior
+    const oldScript = document.getElementById('jsonp-request');
+    if (oldScript) oldScript.remove();
+
+    // Cria um novo elemento de script para a requisição JSONP
+    const script = document.createElement('script');
+    script.id = 'jsonp-request';
+    // Enviamos o parâmetro 'callback' para o Google saber como responder
+    script.src = `${URL_SCRIPT}?barcode=${encodeURIComponent(codigo.trim())}&callback=retornoGoogle`;
+    
+    script.onerror = function() {
+        resultDiv.innerHTML = "Erro na conexão com o Script.";
+    };
+
+    document.body.appendChild(script);
+}
+
+// Esta função será chamada automaticamente quando o Google responder
+function retornoGoogle(res) {
+    const resultDiv = document.getElementById('result');
+    if(res.status === "erro") {
+        resultDiv.innerHTML = "❌ Não cadastrado.";
+        resultDiv.style.color = "red";
+    } else {
+        resultDiv.className = 'success';
+        resultDiv.style.color = "#155724";
+        resultDiv.innerHTML = `Produto: ${res.nome}<br>Valor: R$ ${res.preco}`;
     }
 }
 

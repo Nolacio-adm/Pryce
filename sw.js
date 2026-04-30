@@ -10,9 +10,9 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // CORREÇÃO: Ignorar requisições para o domínio do Google Script
+  // Ignora chamadas ao Google Script para não quebrar o envio
   if (e.request.url.includes('script.google.com')) {
-    return; // Deixa o navegador lidar diretamente, sem passar pelo cache
+    return;
   }
   e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
 });

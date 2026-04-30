@@ -37,36 +37,36 @@
         });
 
         // Função de Envio Corrigida para evitar CORS
-        async function enviarCodigo(codigo) {
-            if (!codigo) return;
-            const resultDiv = document.getElementById('result');
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = "Buscando...";
+async function enviarCodigo(codigo) {
+    if (!codigo) return;
+    const resultDiv = document.getElementById('result');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = "Buscando...";
 
-            const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwfhj30NWTl2vXea_mqFAO21lo9s1yiLJt0S5YCDAUhq9JKEyar6qNL_p4DKO-UZCSE/exec"; 
+    const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwfhj30NWTl2vXea_mqFAO21lo9s1yiLJt0S5YCDAUhq9JKEyar6qNL_p4DKO-UZCSE/exec"; 
 
-            try {
-                const response = await fetch(URL_SCRIPT, {
-                    method: "POST",
-                    mode: "cors", 
-                    body: JSON.stringify({ barcode: codigo.trim() }),
-                    headers: { "Content-Type": "text/plain;charset=utf-8" }
-                });
-                
-                const res = await response.json();
-                
-                if(res.status === "erro") {
-                    resultDiv.innerHTML = "❌ Produto não cadastrado.";
-                    resultDiv.style.color = "red";
-                } else {
-                    resultDiv.className = 'success';
-                    resultDiv.innerHTML = `Produto: ${res.nome}<br>Valor: R$ ${res.preco}`;
-                }
-            } catch (error) {
-                resultDiv.innerHTML = "Erro na conexão com a planilha.";
-                console.error(error);
-            }
+    try {
+        // Enviar como um formulário simples evita o "pre-flight" do CORS
+        const response = await fetch(URL_SCRIPT + "?barcode=" + encodeURIComponent(codigo.trim()), {
+            method: "GET", // Mudamos para GET para testar se o Google aceita melhor
+            mode: "cors"
+        });
+        
+        const res = await response.json();
+        
+        if(res.status === "erro") {
+            resultDiv.innerHTML = "❌ Não cadastrado.";
+            resultDiv.style.color = "red";
+        } else {
+            resultDiv.className = 'success';
+            resultDiv.innerHTML = `Produto: ${res.nome}<br>Valor: R$ ${res.preco}`;
         }
+    } catch (error) {
+        // Se o erro persistir, o problema é a Implantação do Google
+        resultDiv.innerHTML = "Erro de CORS. Verifique a Implantação.";
+        console.error(error);
+    }
+}
 
         // Registro do PWA
         if ('serviceWorker' in navigator) {

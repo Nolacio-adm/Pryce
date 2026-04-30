@@ -1,40 +1,77 @@
-<!-- Substitua a função enviarCodigo por esta no seu index.html -->
-<script>
-    async function enviarCodigo(codigo) {
-        if (!codigo) return;
-        
-        const resultDiv = document.getElementById('result');
-        resultDiv.style.display = 'block';
-        resultDiv.className = '';
-        resultDiv.innerHTML = "Buscando...";
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner Estoque PWA</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background: #f4f7f6; }
+        #reader { width: 100%; max-width: 500px; border-radius: 8px; overflow: hidden; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 20px; width: 100%; max-width: 460px; }
+        input { width: 70%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        #result { margin-top: 15px; font-weight: bold; }
+        .success { color: #155724; background: #d4edda; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
 
-        // Certifique-se de que esta URL é a de "Implantação" e termina em /exec
-        const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwfhj30NWTl2vXea_mqFAO21lo9s1yiLJt0S5YCDAUhq9JKEyar6qNL_p4DKO-UZCSE/exec"; 
+    <h2>Scanner de Estoque</h2>
+    <div id="reader"></div>
 
-        try {
-            const response = await fetch(URL_SCRIPT, {
-                method: "POST",
-                mode: "cors", 
-                body: JSON.stringify({ barcode: codigo.trim() }),
-                headers: {
-                    // Usar text/plain evita que o navegador faça o "pre-flight request" que causa erro de CORS
-                    "Content-Type": "text/plain;charset=utf-8"
+    <div class="card">
+        <p>Leitura Manual:</p>
+        <input type="text" id="manualCode" placeholder="Código de barras">
+        <button onclick="enviarCodigo(document.getElementById('manualCode').value)">Verificar</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Configuração do Scanner
+        const html5QrCode = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 150} });
+        html5QrCode.render((decodedText) => {
+            document.getElementById('manualCode').value = decodedText;
+            enviarCodigo(decodedText);
+        });
+
+        // Função de Envio Corrigida para evitar CORS
+        async function enviarCodigo(codigo) {
+            if (!codigo) return;
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = "Buscando...";
+
+            const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwfhj30NWTl2vXea_mqFAO21lo9s1yiLJt0S5YCDAUhq9JKEyar6qNL_p4DKO-UZCSE/exec"; 
+
+            try {
+                const response = await fetch(URL_SCRIPT, {
+                    method: "POST",
+                    mode: "cors", 
+                    body: JSON.stringify({ barcode: codigo.trim() }),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                });
+                
+                const res = await response.json();
+                
+                if(res.status === "erro") {
+                    resultDiv.innerHTML = "❌ Produto não cadastrado.";
+                    resultDiv.style.color = "red";
+                } else {
+                    resultDiv.className = 'success';
+                    resultDiv.innerHTML = `Produto: ${res.nome}<br>Valor: R$ ${res.preco}`;
                 }
-            });
-            
-            const res = await response.json();
-            
-            if(res.status === "erro" || res.nome === "Não encontrado") {
-                resultDiv.innerHTML = "❌ Produto não cadastrado.";
-                resultDiv.style.color = "red";
-            } else {
-                resultDiv.className = 'success';
-                resultDiv.style.color = "#155724";
-                resultDiv.innerHTML = `<strong>Produto:</strong> ${res.nome}<br><strong>Valor:</strong> R$ ${res.preco}`;
+            } catch (error) {
+                resultDiv.innerHTML = "Erro na conexão com a planilha.";
+                console.error(error);
             }
-        } catch (error) {
-            resultDiv.innerHTML = "Erro na conexão ou no Script Google.";
-            console.error("Erro:", error);
         }
-    }
-</script>
+
+        // Registro do PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+    </script>
+</body>
+</html>

@@ -23,11 +23,19 @@
     <div id="reader"></div>
 
     <div class="card">
-        <p>Leitura Manual ou Scanner:</p>
-        <input type="text" id="manualCode" placeholder="Código de barras">
-        <button onclick="enviarCodigo(document.getElementById('manualCode').value)">Verificar Produto</button>
-        <div id="result"></div>
+    <p>Leitura Manual ou Scanner:</p>
+    <input type="text" id="manualCode" placeholder="Código de barras">
+    <button onclick="enviarCodigo(document.getElementById('manualCode').value)">Verificar Produto</button>
+    
+    <div id="result"></div>
+    
+    <!-- Novo campo que aparece após encontrar o produto -->
+    <div id="priceSection" style="display:none; margin-top: 15px; border-top: 1px solid #ddd; padding-top: 15px;">
+        <p>Informe o Preço Atual:</p>
+        <input type="number" id="inputPreco" step="0.01" placeholder="R$ 0,00">
+        <button style="background: #007bff;" onclick="salvarPreco()">Confirmar Preço</button>
     </div>
+</div>
 
     <script>
         // 1. Configuração do Scanner de QR/Código de Barras
@@ -72,17 +80,34 @@
         }
 
         // 3. Função de Retorno (Deve ser Global)
-        function retornoGoogle(res) {
-            const resultDiv = document.getElementById('result');
-            
-            if(res.status === "erro") {
-                resultDiv.className = 'error';
-                resultDiv.innerHTML = "❌ Produto não cadastrado.";
-            } else {
-                resultDiv.className = 'success';
-                resultDiv.innerHTML = `<strong>Produto:</strong> ${res.nome}<br><strong>Preço:</strong> R$ ${res.preco}`;
-            }
-        }
+       function retornoGoogle(res) {
+    const resultDiv = document.getElementById('result');
+    const priceSection = document.getElementById('priceSection');
+    
+    if(res.status === "erro") {
+        resultDiv.className = 'error';
+        resultDiv.innerHTML = "❌ Produto não cadastrado.";
+        priceSection.style.display = 'none';
+    } else {
+        resultDiv.className = 'success';
+        resultDiv.innerHTML = `<strong>Produto:</strong> ${res.nome}<br><strong>Emb:</strong> ${res.embalagem}`;
+        
+        // Exibe o campo para digitar o preço
+        priceSection.style.display = 'block';
+        document.getElementById('inputPreco').focus();
+    }
+}
+
+function salvarPreco() {
+    const preco = document.getElementById('inputPreco').value;
+    if(!preco) return alert("Por favor, digite o preço.");
+    
+    alert("Preço de R$ " + preco + " registrado com sucesso!");
+    // Aqui você pode adicionar lógica futura para salvar esse preço em outra aba
+    document.getElementById('priceSection').style.display = 'none';
+    document.getElementById('manualCode').value = '';
+    document.getElementById('result').innerHTML = '';
+}
 
         // 4. Registro do Service Worker para PWA
         if ('serviceWorker' in navigator) {

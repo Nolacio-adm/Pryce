@@ -56,31 +56,43 @@
 
     <script>
     let codigoAtual = ""; 
+    let lendo = false; // TRAVA: Evita disparar várias buscas ao mesmo tempo
 
-    // 1. Configuração do Scanner forçando a câmera traseira
     const html5QrCode = new Html5QrcodeScanner("reader", {
         fps: 10,
         qrbox: {width: 250, height: 150},
         aspectRatio: 1.0,
         videoConstraints: {
-            facingMode: { exact: "environment" } // Força a traseira
+            facingMode: "environment" // 'environment' prefere a traseira
         }
     });
 
-    // Ação ao ler o código
     html5QrCode.render((decodedText) => {
+        // Se já estiver processando uma leitura, ignora as próximas
+        if (lendo) return; 
+        
+        lendo = true; // Ativa a trava
         document.getElementById('manualCode').value = decodedText;
         
-        // NOVO: Esconde a câmera e mostra a seção de formulário
-        document.getElementById('reader').style.display = 'none';
-        document.getElementById('formSection').style.display = 'block';
-        
-        enviarCodigo(decodedText);
+        // Para o scanner para economizar bateria e evitar o loop
+        html5QrCode.clear().then(() => {
+            document.getElementById('reader').style.display = 'none';
+            document.getElementById('formSection').style.display = 'block';
+            enviarCodigo(decodedText);
+        }).catch(error => {
+            console.error("Erro ao parar o scanner:", error);
+            // Se falhar ao limpar, tenta seguir o fluxo mesmo assim
+            document.getElementById('reader').style.display = 'none';
+            document.getElementById('formSection').style.display = 'block';
+            enviarCodigo(decodedText);
+        });
     });
 
-    // 2. Função de Busca (JSONP)
     function enviarCodigo(codigo) {
-        if (!codigo) return;
+        if (!codigo) {
+            lendo = false; // Libera se o código for vazio
+            return;
+        }
         
         const resultDiv = document.getElementById('result');
         resultDiv.className = ''; 
@@ -97,12 +109,15 @@
         
         script.onerror = function() {
             resultDiv.className = 'error';
-            resultDiv.innerHTML = "❌ Erro de conexão. Recarregando...";
+            resultDiv.innerHTML = "❌ Erro de conexão. Reiniciando...";
             setTimeout(() => location.reload(), 2000);
         };
 
         document.body.appendChild(script);
     }
+
+    // ... (restante das funções retornoGoogle e salvarPreco continuam iguais)
+</script>
 
     // 3. Função de Retorno do Google
     function retornoGoogle(res) {

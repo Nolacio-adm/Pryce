@@ -13,6 +13,10 @@
         #reader { width: 100%; max-width: 500px; border-radius: 12px; overflow: hidden; background: #000; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 15px; width: 100%; max-width: 460px; box-sizing: border-box; }
         input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
+        /* Ajuste específico para o campo de preço se ele estiver "estourando" */
+        #inputPreco {
+    max-width: 100%; /* Garante que nunca passe do elemento pai */
+    display: block;  /* Evita comportamentos de elementos inline-block */ }
         button { padding: 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: opacity 0.2s; }
         button:active { opacity: 0.8; }
         .btn-success { background: #28a745; color: white; }

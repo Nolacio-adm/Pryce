@@ -80,33 +80,43 @@
         }
 
         // 3. Função de Retorno (Deve ser Global)
-       function retornoGoogle(res) {
+let codigoAtual = ""; // Variável para lembrar qual código foi lido
+
+function retornoGoogle(res) {
     const resultDiv = document.getElementById('result');
     const priceSection = document.getElementById('priceSection');
     
-    if(res.status === "erro") {
-        resultDiv.className = 'error';
-        resultDiv.innerHTML = "❌ Produto não cadastrado.";
-        priceSection.style.display = 'none';
-    } else {
+    if(res.status === "sucesso") {
+        codigoAtual = document.getElementById('manualCode').value; // Armazena o código lido
         resultDiv.className = 'success';
-        resultDiv.innerHTML = `<strong>Produto:</strong> ${res.nome}<br><strong>Emb:</strong> ${res.embalagem}`;
-        
-        // Exibe o campo para digitar o preço
+        resultDiv.innerHTML = `<strong>Item:</strong> ${res.nome}<br><strong>Emb:</strong> ${res.embalagem}`;
         priceSection.style.display = 'block';
         document.getElementById('inputPreco').focus();
+    } else if (res.status === "salvo") {
+        resultDiv.innerHTML = "✅ Preço salvo na planilha!";
+        priceSection.style.display = 'none';
+        document.getElementById('manualCode').value = '';
+    } else {
+        resultDiv.className = 'error';
+        resultDiv.innerHTML = "❌ Produto não encontrado.";
+        priceSection.style.display = 'none';
     }
 }
 
 function salvarPreco() {
     const preco = document.getElementById('inputPreco').value;
-    if(!preco) return alert("Por favor, digite o preço.");
+    if(!preco) return alert("Digite o preço!");
+
+    const resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = "⏳ Salvando...";
+
+    // Reutiliza a URL para salvar os dados
+    const URL_SCRIPT = "SUA_URL_AQUI_DO_GOOGLE";
+    const script = document.createElement('script');
+    script.src = `${URL_SCRIPT}?barcode=${codigoAtual}&preco=${preco}&callback=retornoGoogle`;
+    document.body.appendChild(script);
     
-    alert("Preço de R$ " + preco + " registrado com sucesso!");
-    // Aqui você pode adicionar lógica futura para salvar esse preço em outra aba
-    document.getElementById('priceSection').style.display = 'none';
-    document.getElementById('manualCode').value = '';
-    document.getElementById('result').innerHTML = '';
+    document.getElementById('inputPreco').value = ''; // Limpa o campo de preço
 }
 
         // 4. Registro do Service Worker para PWA

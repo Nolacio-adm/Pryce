@@ -11,89 +11,95 @@
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background: #f4f7f6; }
         #reader { width: 100%; max-width: 500px; border-radius: 8px; overflow: hidden; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 20px; width: 100%; max-width: 460px; text-align: center; }
-        input { width: 80%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
-        button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 85%; }
+        input { width: 85%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        button { padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 90%; }
         #result { margin-top: 15px; font-weight: bold; min-height: 50px; padding: 10px; border-radius: 4px; }
         .success { color: #155724; background: #d4edda; border: 1px solid #c3e6cb; }
         .error { color: #721c24; background: #f8d7da; border: 1px solid #f5c6cb; }
         
-        /* Esconde o leitor quando necessário */
-        #reader.hidden { display: none !important; }
-        /* Ajuste para a seção de preço ocupar bem o espaço */
         #priceSection {display: none; flex-direction: column; align-items: center; width: 100%; }
-        .card { border: none; box-shadow: none; /* Remove a sombra para o formulário ficar mais limpo */ }
+        #manualArea { margin-top: 15px; width: 100%; max-width: 500px; text-align: center; }
     </style>
 </head>
 <body>
 
     <h2>Scanner de Estoque</h2>
-    <!-- O leitor de câmera aparece primeiro -->
-<div id="reader"></div>
-
-<!-- Seção do formulário: começa escondida (display: none) -->
-<div id="formSection" class="card" style="display: none; text-align: center;">
     
-    <!-- Exibe Nome do Item e Embalagem -->
-    <div id="result"></div>
-    
-    <!-- Campo de Preço que aparece após a busca com sucesso -->
-    <div id="priceSection" style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 15px;">
-        <p style="font-weight: bold;">Informe o Preço Atual:</p>
+    <!-- Área do Scanner e Entrada Manual -->
+    <div id="scannerArea" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div id="reader"></div>
         
-        <!-- Input de texto para aceitar a máscara R$ 0,00 -->
-        <input type="text" id="inputPreco" placeholder="R$ 0,00" 
-               style="width: 100%; padding: 12px; font-size: 1.2em; margin-bottom: 10px; text-align: center;">
-        
-        <button style="background: #007bff; color: white; width: 100%; padding: 15px; border: none; border-radius: 5px; font-size: 1.1em;" 
-                onclick="salvarPreco()">
-            Confirmar e Voltar
-        </button>
+        <div id="manualArea">
+            <p style="margin-bottom: 8px; font-size: 14px; color: #666;">Ou digite o código manualmente:</p>
+            <input type="text" id="inputManual" placeholder="Código de barras" style="margin-bottom: 8px;">
+            <button onclick="verificarManual()" style="background: #6c757d;">Verificar Produto</button>
+        </div>
     </div>
-</div>
 
-<!-- Input oculto para armazenar o código lido pelo scanner ou manual -->
-<input type="hidden" id="manualCode">
+    <!-- Seção do formulário de preço -->
+    <div id="formSection" class="card" style="display: none; text-align: center;">
+        <div id="result"></div>
+        
+        <div id="priceSection" style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 15px;">
+            <p style="font-weight: bold;">Informe o Preço Atual:</p>
+            
+            <!-- inputmode="decimal" força o teclado numérico no celular -->
+            <input type="text" id="inputPreco" inputmode="decimal" placeholder="R$ 0,00" 
+                   style="width: 100%; padding: 12px; font-size: 1.5em; margin-bottom: 10px; text-align: center;">
+            
+            <button style="background: #007bff; color: white; width: 100%; padding: 15px; border: none; border-radius: 5px; font-size: 1.1em;" 
+                    onclick="salvarPreco()">
+                Confirmar e Voltar
+            </button>
+        </div>
+    </div>
 
-    <script>
+    <!-- Input oculto para o código lido -->
+    <input type="hidden" id="manualCode">
+
+<script>
     let codigoAtual = ""; 
-    let lendo = false; // TRAVA: Evita disparar várias buscas ao mesmo tempo
+    let lendo = false;
 
     const html5QrCode = new Html5QrcodeScanner("reader", {
         fps: 10,
         qrbox: {width: 250, height: 150},
         aspectRatio: 1.0,
-        videoConstraints: {
-            facingMode: "environment" // 'environment' prefere a traseira
-        }
+        videoConstraints: { facingMode: "environment" }
     });
 
-    html5QrCode.render((decodedText) => {
-        // Se já estiver processando uma leitura, ignora as próximas
-        if (lendo) return; 
+    // Função central para trocar de tela e buscar dados
+    function processarCodigo(codigo) {
+        if (lendo) return;
+        lendo = true;
         
-        lendo = true; // Ativa a trava
-        document.getElementById('manualCode').value = decodedText;
+        document.getElementById('manualCode').value = codigo;
         
-        // Para o scanner para economizar bateria e evitar o loop
+        // Esconde scanner e mostra formulário
         html5QrCode.clear().then(() => {
-            document.getElementById('reader').style.display = 'none';
+            document.getElementById('scannerArea').style.display = 'none';
             document.getElementById('formSection').style.display = 'block';
-            enviarCodigo(decodedText);
-        }).catch(error => {
-            console.error("Erro ao parar o scanner:", error);
-            // Se falhar ao limpar, tenta seguir o fluxo mesmo assim
-            document.getElementById('reader').style.display = 'none';
+            enviarCodigo(codigo);
+        }).catch(() => {
+            document.getElementById('scannerArea').style.display = 'none';
             document.getElementById('formSection').style.display = 'block';
-            enviarCodigo(decodedText);
+            enviarCodigo(codigo);
         });
+    }
+
+    // Leitura via Câmera
+    html5QrCode.render((decodedText) => {
+        processarCodigo(decodedText);
     });
+
+    // Verificação Manual
+    function verificarManual() {
+        let cod = document.getElementById('inputManual').value.trim();
+        if (cod) processarCodigo(cod);
+        else alert("Digite um código!");
+    }
 
     function enviarCodigo(codigo) {
-        if (!codigo) {
-            lendo = false; // Libera se o código for vazio
-            return;
-        }
-        
         const resultDiv = document.getElementById('result');
         resultDiv.className = ''; 
         resultDiv.innerHTML = "⏳ Buscando item...";
@@ -105,7 +111,7 @@
 
         const script = document.createElement('script');
         script.id = 'jsonp-request';
-        script.src = `${URL_SCRIPT}?barcode=${encodeURIComponent(codigo.trim())}&callback=retornoGoogle`;
+        script.src = `${URL_SCRIPT}?barcode=${encodeURIComponent(codigo)}&callback=retornoGoogle`;
         
         script.onerror = function() {
             resultDiv.className = 'error';
@@ -116,7 +122,6 @@
         document.body.appendChild(script);
     }
 
-    // 3. Função de Retorno do Google
     function retornoGoogle(res) {
         const resultDiv = document.getElementById('result');
         const priceSection = document.getElementById('priceSection');
@@ -124,13 +129,11 @@
         if(res.status === "sucesso") {
             codigoAtual = document.getElementById('manualCode').value;
             resultDiv.className = 'success';
-            // Exibe a descrição grande e a embalagem
             resultDiv.innerHTML = `<h2 style="margin:0">${res.nome}</h2><p>Emb: ${res.embalagem}</p>`;
             priceSection.style.display = 'block';
             document.getElementById('inputPreco').focus();
         } else if (res.status === "salvo") {
-            resultDiv.innerHTML = "✅ Preço salvo! Voltando para a câmera...";
-            // NOVO: Recarrega a página para resetar a câmera para a próxima leitura
+            resultDiv.innerHTML = "✅ Preço salvo! Voltando...";
             setTimeout(() => location.reload(), 1500);
         } else {
             resultDiv.className = 'error';
@@ -139,10 +142,8 @@
         }
     }
 
-    // 4. Função para Salvar o Preço (Já com a limpeza da máscara)
     function salvarPreco() {
         let precoFormatado = document.getElementById('inputPreco').value;
-        // Limpa a máscara R$ para enviar apenas número ao Google (ex: 10.50)
         let precoNumerico = precoFormatado.replace("R$", "").trim().replace(/\./g, "").replace(",", ".");
         
         if(!precoNumerico || precoNumerico === "0.00") {
@@ -165,7 +166,6 @@
         document.body.appendChild(script);
     }
 
-    // Máscara de Moeda
     VMasker(document.getElementById("inputPreco")).maskMoney({
         precision: 2,
         separator: ',',
@@ -174,7 +174,6 @@
         zeroCents: false
     });
 
-    // Service Worker PWA
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js').catch(err => console.log("SW erro:", err));

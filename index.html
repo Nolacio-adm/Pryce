@@ -111,7 +111,7 @@ function salvarPreco() {
     resultDiv.innerHTML = "⏳ Salvando...";
 
     // Reutiliza a URL para salvar os dados
-    const URL_SCRIPT = "SUA_URL_AQUI_DO_GOOGLE";
+    const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwfhj30NWTl2vXea_mqFAO21lo9s1yiLJt0S5YCDAUhq9JKEyar6qNL_p4DKO-UZCSE/exec";
     const script = document.createElement('script');
     script.src = `${URL_SCRIPT}?barcode=${codigoAtual}&preco=${preco}&callback=retornoGoogle`;
     document.body.appendChild(script);

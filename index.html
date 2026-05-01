@@ -135,7 +135,7 @@
     const resultDiv = document.getElementById('result');
     const priceSection = document.getElementById('priceSection');
     
-    // Se recebeu estatísticas, salva no localStorage e atualiza a tela
+    // Atualiza estatísticas vindas do servidor
     if (res.stats) {
         localStorage.setItem('stats_coleta', JSON.stringify(res.stats));
         atualizarInterfaceProgresso(res.stats);
@@ -148,8 +148,13 @@
         priceSection.style.display = 'block';
         document.getElementById('inputPreco').focus();
     } else if (res.status === "salvo") {
-        resultDiv.innerHTML = "✅ Preço salvo! Atualizando progresso...";
-        // Aguarda um pouco para o usuário ver a mensagem e recarrega
+        // AJUSTE: Soma 1 manualmente no contador visual para dar feedback imediato
+        let stats = JSON.parse(localStorage.getItem('stats_coleta') || '{"lidos":0,"total":0}');
+        stats.lidos++;
+        localStorage.setItem('stats_coleta', JSON.stringify(stats));
+        atualizarInterfaceProgresso(stats);
+
+        resultDiv.innerHTML = "✅ Preço salvo! Atualizando...";
         setTimeout(() => location.reload(), 1200);
     } else {
         resultDiv.className = 'error';
@@ -181,7 +186,7 @@
         
         document.body.appendChild(script);
     }
-
+    // 2. Configuração da Máscara de Moeda (Executa assim que o script carrega)
     VMasker(document.getElementById("inputPreco")).maskMoney({
         precision: 2,
         separator: ',',
@@ -198,10 +203,13 @@
 
     // Função apenas para desenhar a barra na tela
 function atualizarInterfaceProgresso(stats) {
-    if (!stats) return;
-    const porc = (stats.lidos / stats.total) * 100;
+    if (!stats || stats.total === 0) return;
+    // Garante que lidos não ultrapasse o total por erro de soma manual
+    const lidos = Math.min(stats.lidos, stats.total);
+    const porc = (lidos / stats.total) * 100;
+    
     document.getElementById('barraProgresso').style.width = porc + "%";
-    document.getElementById('txtProgresso').innerText = `${stats.lidos} de ${stats.total}`;
+    document.getElementById('txtProgresso').innerText = `${lidos} de ${stats.total}`;
 }
 
 // Quando a página carrega, verifica se já existe um progresso salvo

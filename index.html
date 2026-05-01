@@ -30,10 +30,11 @@
         <div id="reader"></div>
         
         <div id="manualArea">
-            <p style="margin-bottom: 8px; font-size: 14px; color: #666;">Ou digite o código manualmente:</p>
-            <input type="text" id="inputManual" placeholder="Código de barras" style="margin-bottom: 8px;">
-            <button onclick="verificarManual()" style="background: #6c757d;">Verificar Produto</button>
-        </div>
+    <p style="margin-bottom: 8px; font-size: 14px; color: #666;">Ou digite o código manualmente:</p>
+    <!-- inputmode="numeric" abre o teclado de números no celular -->
+    <input type="text" id="inputManual" inputmode="numeric" pattern="[0-9]*" placeholder="Código de barras" style="margin-bottom: 8px;">
+    <button onclick="verificarManual()" style="background: #6c757d;">Verificar Produto</button>
+</div>
     </div>
 
     <!-- Seção do formulário de preço -->

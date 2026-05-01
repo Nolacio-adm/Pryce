@@ -6,6 +6,7 @@
     <title>Scanner Estoque PWA</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://unpkg.com/vanilla-masker@1.2.0/build/vanilla-masker.min.js"></script>
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background: #f4f7f6; }
         #reader { width: 100%; max-width: 500px; border-radius: 8px; overflow: hidden; }
@@ -31,8 +32,9 @@
     
     <!-- Novo campo que aparece após encontrar o produto -->
     <div id="priceSection" style="display:none; margin-top: 15px; border-top: 1px solid #ddd; padding-top: 15px;">
+        
         <p>Informe o Preço Atual:</p>
-        <input type="number" id="inputPreco" step="0.01" placeholder="R$ 0,00">
+        <input type="text" id="inputPreco" placeholder="R$ 0,00">
         <button style="background: #007bff;" onclick="salvarPreco()">Confirmar Preço</button>
     </div>
 </div>
@@ -141,6 +143,47 @@ function salvarPreco() {
                 navigator.serviceWorker.register('./sw.js').catch(err => console.log("SW erro:", err));
             });
         }
+
+        // Configura a máscara de dinheiro no campo de preço
+VMasker(document.getElementById("inputPreco")).maskMoney({
+  precision: 2,
+  separator: ',',
+  delimiter: '.',
+  unit: 'R$',
+  zeroCents: false
+});
+
+function salvarPreco() {
+    // Remove o "R$" e pontos, e troca a vírgula por ponto para o Google entender como número
+    let precoFormatado = document.getElementById('inputPreco').value;
+    let precoNumerico = precoFormatado.replace("R$", "").trim().replace(/\./g, "").replace(",", ".");
+    
+    if(!precoNumerico || precoNumerico === "0.00") {
+        alert("Digite um preço válido!");
+        return;
+    }
+
+    const resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = "⏳ Salvando na planilha...";
+
+    const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwfhj30NWTl2vXea_mqFAO21lo9s1yiLJt0S5YCDAUhq9JKEyar6qNL_p4DKO-UZCSE/exec";
+    
+    const oldScript = document.getElementById('save-request');
+    if (oldScript) oldScript.remove();
+
+    const script = document.createElement('script');
+    script.id = 'save-request';
+    // Enviamos o precoNumerico (ex: 10.50) para a planilha
+    script.src = `${URL_SCRIPT}?barcode=${encodeURIComponent(codigoAtual)}&preco=${encodeURIComponent(precoNumerico)}&callback=retornoGoogle`;
+    
+    script.onerror = function() {
+        resultDiv.innerHTML = "❌ Erro de rede ao salvar.";
+        resultDiv.className = 'error';
+    };
+
+    document.body.appendChild(script);
+}
+        
     </script>
 </body>
 </html>

@@ -2,166 +2,144 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Scanner Estoque PWA</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://unpkg.com/vanilla-masker@1.2.0/build/vanilla-masker.min.js"></script>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background: #f4f7f6; }
-        #reader { width: 100%; max-width: 500px; border-radius: 8px; overflow: hidden; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 20px; width: 100%; max-width: 460px; text-align: center; }
-        input { width: 85%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
-        button { padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 90%; }
-        #result { margin-top: 15px; font-weight: bold; min-height: 50px; padding: 10px; border-radius: 4px; }
-        .success { color: #155724; background: #d4edda; border: 1px solid #c3e6cb; }
-        .error { color: #721c24; background: #f8d7da; border: 1px solid #f5c6cb; }
-        
-        #priceSection {display: none; flex-direction: column; align-items: center; width: 100%; }
-        #manualArea { margin-top: 15px; width: 100%; max-width: 500px; text-align: center; }
+        /* Estilos otimizados para Mobile First */
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 15px; background: #f4f7f6; margin: 0; }
+        #reader { width: 100%; max-width: 500px; border-radius: 12px; overflow: hidden; background: #000; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 15px; width: 100%; max-width: 460px; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
+        button { padding: 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: opacity 0.2s; }
+        button:active { opacity: 0.8; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-primary { background: #007bff; color: white; font-size: 1.1em; }
+        #result { margin-top: 10px; font-weight: bold; min-height: 40px; padding: 12px; border-radius: 6px; display: none; }
+        .success { color: #155724; background: #d4edda; display: block !important; }
+        .error { color: #721c24; background: #f8d7da; display: block !important; }
+        .progress-container { width: 100%; max-width: 460px; margin-bottom: 15px; }
+        #priceSection { display: none; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
     </style>
 </head>
 <body>
 
-    <h2>Scanner de Estoque</h2>
-    <div style="width: 90%; max-width: 460px; margin-bottom: 10px;">
-    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px;">
-        <span>Progresso da Coleta</span>
-        <span id="txtProgresso">0/0</span>
-    </div>
-    <div style="width: 100%; background: #ddd; height: 10px; border-radius: 5px; overflow: hidden;">
-        <div id="barraProgresso" style="width: 0%; height: 100%; background: #28a745; transition: width 0.5s;"></div>
-    </div>
-</div>
-    <!-- Área do Scanner e Entrada Manual -->
-    <div id="scannerArea" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-        <div id="reader"></div>
-        
-        <div id="manualArea">
-    <p style="margin-bottom: 8px; font-size: 14px; color: #666;">Ou digite o código manualmente:</p>
-    <!-- inputmode="numeric" abre o teclado de números no celular -->
-    <input type="text" id="inputManual" inputmode="numeric" pattern="[0-9]*" placeholder="Código de barras" style="margin-bottom: 8px;">
-    <button onclick="verificarManual()" style="background: #6c757d;">Verificar Produto</button>
-</div>
-    </div>
+    <h2 style="margin: 10px 0;">Scanner de Estoque</h2>
 
-    <!-- Seção do formulário de preço -->
-    <div id="formSection" class="card" style="display: none; text-align: center;">
-        <div id="result"></div>
-        
-        <div id="priceSection" style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 15px;">
-            <p style="font-weight: bold;">Informe o Preço Atual:</p>
-            
-            <!-- inputmode="decimal" força o teclado numérico no celular -->
-            <input type="text" id="inputPreco" inputmode="decimal" placeholder="R$ 0,00" 
-                   style="width: 100%; padding: 12px; font-size: 1.5em; margin-bottom: 10px; text-align: center;">
-            
-            <button style="background: #007bff; color: white; width: 100%; padding: 15px; border: none; border-radius: 5px; font-size: 1.1em;" 
-                    onclick="salvarPreco()">
-                Confirmar e Voltar
-            </button>
+    <div class="progress-container">
+        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; color: #555;">
+            <span>Progresso da Coleta</span>
+            <strong id="txtProgresso">0/0</strong>
+        </div>
+        <div style="width: 100%; background: #ddd; height: 12px; border-radius: 6px; overflow: hidden;">
+            <div id="barraProgresso" style="width: 0%; height: 100%; background: #28a745; transition: width 0.4s ease-out;"></div>
         </div>
     </div>
 
-    <!-- Input oculto para o código lido -->
-    <input type="hidden" id="manualCode">
+    <!-- Área de Entrada -->
+    <div id="scannerArea" style="width: 100%; max-width: 500px;">
+        <div id="reader"></div>
+        <div id="manualArea" class="card">
+            <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">Entrada Manual:</p>
+            <input type="text" id="inputManual" inputmode="numeric" pattern="[0-9]*" placeholder="Digite o código de barras">
+            <button onclick="verificarManual()" class="btn-secondary">Verificar Produto</button>
+        </div>
+    </div>
+
+    <!-- Formulário de Preço -->
+    <div id="formSection" class="card" style="display: none;">
+        <div id="result"></div>
+        <div id="priceSection">
+            <p style="font-weight: bold; margin-bottom: 10px;">Informe o Preço Atual:</p>
+            <input type="text" id="inputPreco" inputmode="decimal" placeholder="R$ 0,00" style="font-size: 1.8em; text-align: center;">
+            <button class="btn-primary" onclick="salvarPreco()">Confirmar e Voltar</button>
+            <button class="btn-secondary" onclick="resetarApp()" style="margin-top: 10px; background: transparent; color: #666;">Cancelar</button>
+        </div>
+    </div>
 
 <script>
     let codigoAtual = ""; 
-    let lendo = false;
+    let scannerIniciado = false;
+    const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwfhj30NWTl2vXea_mqFAO21lo9s1yiLJt0S5YCDAUhq9JKEyar6qNL_p4DKO-UZCSE/exec";
 
+    // Inicialização do Scanner
     const html5QrCode = new Html5QrcodeScanner("reader", {
         fps: 10,
         qrbox: {width: 250, height: 150},
         aspectRatio: 1.0,
-        videoConstraints: { facingMode: "environment" }
+        rememberLastUsedCamera: true,
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
     });
 
-    // Função central para trocar de tela e buscar dados
-    function processarCodigo(codigo) {
-        if (lendo) return;
-        lendo = true;
-        
-        document.getElementById('manualCode').value = codigo;
-        
-        // Esconde scanner e mostra formulário
-        html5QrCode.clear().then(() => {
-            document.getElementById('scannerArea').style.display = 'none';
-            document.getElementById('formSection').style.display = 'block';
-            enviarCodigo(codigo);
-        }).catch(() => {
-            document.getElementById('scannerArea').style.display = 'none';
-            document.getElementById('formSection').style.display = 'block';
-            enviarCodigo(codigo);
+    function iniciarCamera() {
+        html5QrCode.render((decodedText) => {
+            processarCodigo(decodedText);
         });
+        scannerIniciado = true;
     }
 
-    // Leitura via Câmera
-    html5QrCode.render((decodedText) => {
-        processarCodigo(decodedText);
-    });
+    function processarCodigo(codigo) {
+        codigoAtual = codigo;
+        
+        // Interface: Troca rápida de telas
+        document.getElementById('scannerArea').style.display = 'none';
+        document.getElementById('formSection').style.display = 'block';
+        document.getElementById('priceSection').style.display = 'none';
+        
+        // Para a câmera para economizar bateria e CPU
+        html5QrCode.clear();
+        scannerIniciado = false;
 
-    // Verificação Manual
+        enviarConsulta(codigo);
+    }
+
     function verificarManual() {
         let cod = document.getElementById('inputManual').value.trim();
         if (cod) processarCodigo(cod);
         else alert("Digite um código!");
     }
 
-    function enviarCodigo(codigo) {
+    function enviarConsulta(codigo) {
         const resultDiv = document.getElementById('result');
         resultDiv.className = ''; 
+        resultDiv.style.display = 'block';
         resultDiv.innerHTML = "⏳ Buscando item...";
 
-        const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwfhj30NWTl2vXea_mqFAO21lo9s1yiLJt0S5YCDAUhq9JKEyar6qNL_p4DKO-UZCSE/exec";
-
-        const oldScript = document.getElementById('jsonp-request');
-        if (oldScript) oldScript.remove();
-
-        const script = document.createElement('script');
-        script.id = 'jsonp-request';
-        script.src = `${URL_SCRIPT}?barcode=${encodeURIComponent(codigo)}&callback=retornoGoogle`;
-        
-        script.onerror = function() {
-            resultDiv.className = 'error';
-            resultDiv.innerHTML = "❌ Erro de conexão. Reiniciando...";
-            setTimeout(() => location.reload(), 2000);
-        };
-
-        document.body.appendChild(script);
+        chamadaJSONP(`${URL_SCRIPT}?barcode=${encodeURIComponent(codigo)}&callback=retornoGoogle`, 'jsonp-request');
     }
 
     function retornoGoogle(res) {
-    const resultDiv = document.getElementById('result');
-    const priceSection = document.getElementById('priceSection');
-    
-    // Atualiza estatísticas vindas do servidor
-    if (res.stats) {
-        localStorage.setItem('stats_coleta', JSON.stringify(res.stats));
-        atualizarInterfaceProgresso(res.stats);
-    }
+        const resultDiv = document.getElementById('result');
+        const priceSection = document.getElementById('priceSection');
+        
+        if (res.stats) {
+            localStorage.setItem('stats_coleta', JSON.stringify(res.stats));
+            atualizarInterfaceProgresso(res.stats);
+        }
 
-    if(res.status === "sucesso") {
-        codigoAtual = document.getElementById('manualCode').value;
-        resultDiv.className = 'success';
-        resultDiv.innerHTML = `<h2 style="margin:0">${res.nome}</h2><p>Emb: ${res.embalagem}</p>`;
-        priceSection.style.display = 'block';
-        document.getElementById('inputPreco').focus();
-    } else if (res.status === "salvo") {
-        // AJUSTE: Soma 1 manualmente no contador visual para dar feedback imediato
-        let stats = JSON.parse(localStorage.getItem('stats_coleta') || '{"lidos":0,"total":0}');
-        stats.lidos++;
-        localStorage.setItem('stats_coleta', JSON.stringify(stats));
-        atualizarInterfaceProgresso(stats);
-
-        resultDiv.innerHTML = "✅ Preço salvo! Atualizando...";
-        setTimeout(() => location.reload(), 1200);
-    } else {
-        resultDiv.className = 'error';
-        resultDiv.innerHTML = "❌ Não cadastrado. Voltando...";
-        setTimeout(() => location.reload(), 2000);
+        if(res.status === "sucesso") {
+            resultDiv.className = 'success';
+            resultDiv.innerHTML = `<h2 style="margin:0">${res.nome}</h2><small>${res.embalagem}</small>`;
+            priceSection.style.display = 'block';
+            setTimeout(() => document.getElementById('inputPreco').focus(), 100);
+        } else if (res.status === "salvo") {
+            // Feedback de sucesso e reset sem reload
+            resultDiv.className = 'success';
+            resultDiv.innerHTML = "✅ Preço salvo com sucesso!";
+            
+            // Incremento visual imediato
+            atualizarProgressoManual();
+            
+            setTimeout(() => resetarApp(), 1500);
+        } else {
+            resultDiv.className = 'error';
+            resultDiv.innerHTML = "❌ Não cadastrado no banco.";
+            setTimeout(() => resetarApp(), 2500);
+        }
     }
-}
 
     function salvarPreco() {
         let precoFormatado = document.getElementById('inputPreco').value;
@@ -172,54 +150,67 @@
             return;
         }
 
-        const resultDiv = document.getElementById('result');
-        resultDiv.innerHTML = "⏳ Gravando na planilha...";
+        document.getElementById('result').innerHTML = "⏳ Gravando na planilha...";
+        chamadaJSONP(`${URL_SCRIPT}?barcode=${encodeURIComponent(codigoAtual)}&preco=${encodeURIComponent(precoNumerico)}&callback=retornoGoogle`, 'save-request');
+    }
 
-        const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwfhj30NWTl2vXea_mqFAO21lo9s1yiLJt0S5YCDAUhq9JKEyar6qNL_p4DKO-UZCSE/exec";
-        
-        const oldScript = document.getElementById('save-request');
+    // MELHORIA: Função genérica para chamadas JSONP (mais limpo)
+    function chamadaJSONP(url, id) {
+        const oldScript = document.getElementById(id);
         if (oldScript) oldScript.remove();
-
         const script = document.createElement('script');
-        script.id = 'save-request';
-        script.src = `${URL_SCRIPT}?barcode=${encodeURIComponent(codigoAtual)}&preco=${encodeURIComponent(precoNumerico)}&callback=retornoGoogle`;
-        
+        script.id = id;
+        script.src = url;
+        script.onerror = () => {
+            document.getElementById('result').className = 'error';
+            document.getElementById('result').innerHTML = "❌ Erro de conexão.";
+            setTimeout(resetarApp, 2000);
+        };
         document.body.appendChild(script);
     }
-    // 2. Configuração da Máscara de Moeda (Executa assim que o script carrega)
-    VMasker(document.getElementById("inputPreco")).maskMoney({
-        precision: 2,
-        separator: ',',
-        delimiter: '.',
-        unit: 'R$',
-        zeroCents: false
+
+    // MELHORIA: Resetar App sem recarregar a página (MUITO mais rápido)
+    function resetarApp() {
+        document.getElementById('formSection').style.display = 'none';
+        document.getElementById('priceSection').style.display = 'none';
+        document.getElementById('result').style.display = 'none';
+        document.getElementById('inputManual').value = "";
+        document.getElementById('inputPreco').value = "";
+        document.getElementById('scannerArea').style.display = 'block';
+        
+        if (!scannerIniciado) iniciarCamera();
+    }
+
+    function atualizarInterfaceProgresso(stats) {
+        if (!stats || stats.total === 0) return;
+        const lidos = Math.min(stats.lidos, stats.total);
+        const porc = (lidos / stats.total) * 100;
+        document.getElementById('barraProgresso').style.width = porc + "%";
+        document.getElementById('txtProgresso').innerText = `${lidos} de ${stats.total}`;
+    }
+
+    function atualizarProgressoManual() {
+        let stats = JSON.parse(localStorage.getItem('stats_coleta') || '{"lidos":0,"total":0}');
+        stats.lidos++;
+        localStorage.setItem('stats_coleta', JSON.stringify(stats));
+        atualizarInterfaceProgresso(stats);
+    }
+
+    // Inicialização
+    window.addEventListener('load', () => {
+        iniciarCamera();
+        
+        const salvo = localStorage.getItem('stats_coleta');
+        if (salvo) atualizarInterfaceProgresso(JSON.parse(salvo));
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').catch(e => console.log(e));
+        }
     });
 
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js').catch(err => console.log("SW erro:", err));
-        });
-    }
-
-    // Função apenas para desenhar a barra na tela
-function atualizarInterfaceProgresso(stats) {
-    if (!stats || stats.total === 0) return;
-    // Garante que lidos não ultrapasse o total por erro de soma manual
-    const lidos = Math.min(stats.lidos, stats.total);
-    const porc = (lidos / stats.total) * 100;
-    
-    document.getElementById('barraProgresso').style.width = porc + "%";
-    document.getElementById('txtProgresso').innerText = `${lidos} de ${stats.total}`;
-}
-
-// Quando a página carrega, verifica se já existe um progresso salvo
-window.addEventListener('load', () => {
-    const salvo = localStorage.getItem('stats_coleta');
-    if (salvo) {
-        atualizarInterfaceProgresso(JSON.parse(salvo));
-    }
-});
-    
+    VMasker(document.getElementById("inputPreco")).maskMoney({
+        precision: 2, separator: ',', delimiter: '.', unit: 'R$', zeroCents: false
+    });
 </script>
 </body>
 </html>

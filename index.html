@@ -104,19 +104,35 @@ function retornoGoogle(res) {
 }
 
 function salvarPreco() {
-    const preco = document.getElementById('inputPreco').value;
-    if(!preco) return alert("Digite o preço!");
+    const precoInput = document.getElementById('inputPreco');
+    const preco = precoInput.value;
+    
+    if(!preco) {
+        alert("Digite o preço!");
+        return;
+    }
 
     const resultDiv = document.getElementById('result');
-    resultDiv.innerHTML = "⏳ Salvando...";
+    resultDiv.innerHTML = "⏳ Salvando na planilha...";
 
-    // Reutiliza a URL para salvar os dados
+    // Use a mesma URL que você já validou antes
     const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwfhj30NWTl2vXea_mqFAO21lo9s1yiLJt0S5YCDAUhq9JKEyar6qNL_p4DKO-UZCSE/exec";
-    const script = document.createElement('script');
-    script.src = `${URL_SCRIPT}?barcode=${codigoAtual}&preco=${preco}&callback=retornoGoogle`;
-    document.body.appendChild(script);
     
-    document.getElementById('inputPreco').value = ''; // Limpa o campo de preço
+    // Limpa qualquer pedido pendente para não acumular
+    const oldScript = document.getElementById('save-request');
+    if (oldScript) oldScript.remove();
+
+    const script = document.createElement('script');
+    script.id = 'save-request';
+    // Enviamos barcode, preco e o callback
+    script.src = `${URL_SCRIPT}?barcode=${encodeURIComponent(codigoAtual)}&preco=${encodeURIComponent(preco)}&callback=retornoGoogle`;
+    
+    script.onerror = function() {
+        resultDiv.innerHTML = "❌ Erro de rede ao salvar.";
+        resultDiv.className = 'error';
+    };
+
+    document.body.appendChild(script);
 }
 
         // 4. Registro do Service Worker para PWA

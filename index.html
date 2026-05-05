@@ -57,11 +57,15 @@
     <div id="formSection" class="card" style="display: none;">
         <div id="result"></div>
         <div id="priceSection">
-            <p style="font-weight: bold; margin-bottom: 10px;">Informe o Preço Atual:</p>
-            <input type="text" id="inputPreco" inputmode="decimal" placeholder="R$ 0,00" style="font-size: 1.8em; text-align: center;">
-            <button class="btn-primary" onclick="salvarPreco()">Confirmar e Voltar</button>
-            <button class="btn-secondary" onclick="resetarApp()" style="margin-top: 10px; background: transparent; color: #666;">Cancelar</button>
-        </div>
+    <p style="font-weight: bold; margin-bottom: 5px;">Preço Normal:</p>
+    <input type="text" id="inputPreco" inputmode="decimal" placeholder="R$ 0,00" style="font-size: 1.5em; text-align: center;">
+
+    <p style="font-weight: bold; margin-bottom: 5px;">Preço Promo/Atacado:</p>
+    <input type="text" id="inputPreco2" inputmode="decimal" placeholder="R$ 0,00" style="font-size: 1.5em; text-align: center;">
+
+    <button class="btn-primary" onclick="salvarPreco()">Confirmar e Voltar</button>
+    <button class="btn-secondary" onclick="resetarApp()" style="margin-top: 10px; background: transparent; color: #666;">Cancelar</button>
+</div>
     </div>
 
 <script>
@@ -146,17 +150,21 @@
     }
 
     function salvarPreco() {
-        let precoFormatado = document.getElementById('inputPreco').value;
-        let precoNumerico = precoFormatado.replace("R$", "").trim().replace(/\./g, "").replace(",", ".");
-        
-        if(!precoNumerico || precoNumerico === "0.00") {
-            alert("Digite um preço válido!");
-            return;
-        }
+    let p1Raw = document.getElementById('inputPreco').value;
+    let p2Raw = document.getElementById('inputPreco2').value;
 
-        document.getElementById('result').innerHTML = "⏳ Gravando na planilha...";
-        chamadaJSONP(`${URL_SCRIPT}?barcode=${encodeURIComponent(codigoAtual)}&preco=${encodeURIComponent(precoNumerico)}&callback=retornoGoogle`, 'save-request');
+    let p1 = p1Raw.replace("R$", "").trim().replace(/\./g, "").replace(",", ".");
+    let p2 = p2Raw.replace("R$", "").trim().replace(/\./g, "").replace(",", ".");
+    
+    if(!p1 || p1 === "0.00") {
+        alert("Digite ao menos o preço normal!");
+        return;
     }
+
+    document.getElementById('result').innerHTML = "⏳ Gravando na planilha...";
+    // Enviando os dois preços na URL
+    chamadaJSONP(`${URL_SCRIPT}?barcode=${encodeURIComponent(codigoAtual)}&preco=${encodeURIComponent(p1)}&preco2=${encodeURIComponent(p2)}&callback=retornoGoogle`, 'save-request');
+}
 
     // MELHORIA: Função genérica para chamadas JSONP (mais limpo)
     function chamadaJSONP(url, id) {
@@ -175,15 +183,16 @@
 
     // MELHORIA: Resetar App sem recarregar a página (MUITO mais rápido)
     function resetarApp() {
-        document.getElementById('formSection').style.display = 'none';
-        document.getElementById('priceSection').style.display = 'none';
-        document.getElementById('result').style.display = 'none';
-        document.getElementById('inputManual').value = "";
-        document.getElementById('inputPreco').value = "";
-        document.getElementById('scannerArea').style.display = 'block';
-        
-        if (!scannerIniciado) iniciarCamera();
-    }
+    document.getElementById('formSection').style.display = 'none';
+    document.getElementById('priceSection').style.display = 'none';
+    document.getElementById('result').style.display = 'none';
+    document.getElementById('inputManual').value = "";
+    document.getElementById('inputPreco').value = "";
+    document.getElementById('inputPreco2').value = ""; // Limpa o segundo campo
+    document.getElementById('scannerArea').style.display = 'block';
+    
+    if (!scannerIniciado) iniciarCamera();
+}
 
     function atualizarInterfaceProgresso(stats) {
         if (!stats || stats.total === 0) return;
@@ -213,8 +222,12 @@
     });
 
     VMasker(document.getElementById("inputPreco")).maskMoney({
-        precision: 2, separator: ',', delimiter: '.', unit: 'R$', zeroCents: false
-    });
+    precision: 2, separator: ',', delimiter: '.', unit: 'R$', zeroCents: false
+});
+// Nova máscara para o segundo campo
+VMasker(document.getElementById("inputPreco2")).maskMoney({
+    precision: 2, separator: ',', delimiter: '.', unit: 'R$', zeroCents: false
+});
 </script>
 </body>
 </html>

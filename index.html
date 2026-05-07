@@ -153,8 +153,8 @@
     let p1Raw = document.getElementById('inputPreco').value;
     let p2Raw = document.getElementById('inputPreco2').value;
 
-    let p1 = p1Raw.replace("R$", "").trim().replace(/\./g, "").replace(",", ",");
-    let p2 = p2Raw.replace("R$", "").trim().replace(/\./g, "").replace(",", ",");
+    let p1 = p1Raw.replace("R$", "").trim().replace(/\./g, "");
+    let p2 = p2Raw.replace("R$", "").trim().replace(/\./g, "");
     
     if(!p1 || p1 === "0,00") {
         alert("Digite ao menos o preço normal!");

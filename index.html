@@ -156,7 +156,7 @@
     let p1 = p1Raw.replace("R$", "").trim().replace(/\./g, "").replace(",", ".");
     let p2 = p2Raw.replace("R$", "").trim().replace(/\./g, "").replace(",", ".");
     
-    if(!p1 || p1 === "0.00") {
+    if(!p1 || p1 === "0,00") {
         alert("Digite ao menos o preço normal!");
         return;
     }

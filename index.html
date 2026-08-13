@@ -3,20 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Scanner Estoque PWA</title>
+    <title>Scanner Concorrente PWA</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://unpkg.com/vanilla-masker@1.2.0/build/vanilla-masker.min.js"></script>
     <style>
-        /* Estilos otimizados para Mobile First */
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 15px; background: #f4f7f6; margin: 0; }
+        /* Estilos otimizados para Mobile First e Container de Celular */
+        body { 
+            font-family: sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100dvh; 
+            background: #0b0f19; 
+            margin: 0; 
+            overflow: hidden;
+        }
+
+        .mobile-frame {
+            width: 100%;
+            max-width: 430px;
+            height: 100dvh;
+            max-height: 932px;
+            background-color: #f4f7f6;
+            box-shadow: 0 0 25px rgba(0,0,0,0.8);
+            overflow-y: auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
         #reader { width: 100%; max-width: 500px; border-radius: 12px; overflow: hidden; background: #000; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 15px; width: 100%; max-width: 460px; box-sizing: border-box; }
         input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
-        /* Ajuste específico para o campo de preço se ele estiver "estourando" */
-        #inputPreco {
-    max-width: 100%; /* Garante que nunca passe do elemento pai */
-    display: block;  /* Evita comportamentos de elementos inline-block */ }
+        
+        #inputPreco, #inputPreco2 {
+            max-width: 100%;
+            display: block;
+        }
+        
         button { padding: 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: opacity 0.2s; }
         button:active { opacity: 0.8; }
         .btn-success { background: #28a745; color: white; }
@@ -31,41 +59,43 @@
 </head>
 <body>
 
-    <h2 style="margin: 10px 0;">Scanner de Estoque</h2>
+    <div class="mobile-frame">
+        <h2 style="margin: 10px 0; color: #333;">Scanner Concorrente</h2>
 
-    <div class="progress-container">
-        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; color: #555;">
-            <span>Progresso da Coleta</span>
-            <strong id="txtProgresso">0/0</strong>
+        <div class="progress-container">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; color: #555;">
+                <span>Progresso da Coleta</span>
+                <strong id="txtProgresso">0/0</strong>
+            </div>
+            <div style="width: 100%; background: #ddd; height: 12px; border-radius: 6px; overflow: hidden;">
+                <div id="barraProgresso" style="width: 0%; height: 100%; background: #28a745; transition: width 0.4s ease-out;"></div>
+            </div>
         </div>
-        <div style="width: 100%; background: #ddd; height: 12px; border-radius: 6px; overflow: hidden;">
-            <div id="barraProgresso" style="width: 0%; height: 100%; background: #28a745; transition: width 0.4s ease-out;"></div>
+
+        <!-- Área de Entrada -->
+        <div id="scannerArea" style="width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center;">
+            <div id="reader"></div>
+            <div id="manualArea" class="card">
+                <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">Entrada Manual:</p>
+                <input type="text" id="inputManual" inputmode="numeric" pattern="[0-9]*" placeholder="Digite o código de barras">
+                <button onclick="verificarManual()" class="btn-secondary">Verificar Produto</button>
+            </div>
         </div>
-    </div>
 
-    <!-- Área de Entrada -->
-    <div id="scannerArea" style="width: 100%; max-width: 500px;">
-        <div id="reader"></div>
-        <div id="manualArea" class="card">
-            <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">Entrada Manual:</p>
-            <input type="text" id="inputManual" inputmode="numeric" pattern="[0-9]*" placeholder="Digite o código de barras">
-            <button onclick="verificarManual()" class="btn-secondary">Verificar Produto</button>
+        <!-- Formulário de Preço -->
+        <div id="formSection" class="card" style="display: none;">
+            <div id="result"></div>
+            <div id="priceSection">
+                <p style="font-weight: bold; margin-bottom: 5px; color: #333;">Preço Varejo:</p>
+                <input type="text" id="inputPreco" inputmode="decimal" placeholder="R$ 0,00" style="font-size: 1.5em; text-align: center;">
+
+                <p style="font-weight: bold; margin-bottom: 5px; color: #333;">Preço Atacado:</p>
+                <input type="text" id="inputPreco2" inputmode="decimal" placeholder="R$ 0,00" style="font-size: 1.5em; text-align: center;">
+
+                <button class="btn-primary" onclick="salvarPreco()">Confirmar e Voltar</button>
+                <button class="btn-secondary" onclick="resetarApp()" style="margin-top: 10px; background: transparent; color: #666;">Cancelar</button>
+            </div>
         </div>
-    </div>
-
-    <!-- Formulário de Preço -->
-    <div id="formSection" class="card" style="display: none;">
-        <div id="result"></div>
-        <div id="priceSection">
-    <p style="font-weight: bold; margin-bottom: 5px;">Preço Normal:</p>
-    <input type="text" id="inputPreco" inputmode="decimal" placeholder="R$ 0,00" style="font-size: 1.5em; text-align: center;">
-
-    <p style="font-weight: bold; margin-bottom: 5px;">Preço Promo/Atacado:</p>
-    <input type="text" id="inputPreco2" inputmode="decimal" placeholder="R$ 0,00" style="font-size: 1.5em; text-align: center;">
-
-    <button class="btn-primary" onclick="salvarPreco()">Confirmar e Voltar</button>
-    <button class="btn-secondary" onclick="resetarApp()" style="margin-top: 10px; background: transparent; color: #666;">Cancelar</button>
-</div>
     </div>
 
 <script>
@@ -83,23 +113,27 @@
     });
 
     function iniciarCamera() {
-        html5QrCode.render((decodedText) => {
-            processarCodigo(decodedText);
-        });
-        scannerIniciado = true;
+        if (!scannerIniciado) {
+            html5QrCode.render((decodedText) => {
+                processarCodigo(decodedText);
+            });
+            scannerIniciado = true;
+        }
     }
 
     function processarCodigo(codigo) {
         codigoAtual = codigo;
         
-        // Interface: Troca rápida de telas
         document.getElementById('scannerArea').style.display = 'none';
         document.getElementById('formSection').style.display = 'block';
         document.getElementById('priceSection').style.display = 'none';
         
-        // Para a câmera para economizar bateria e CPU
-        html5QrCode.clear();
-        scannerIniciado = false;
+        html5QrCode.clear().then(() => {
+            scannerIniciado = false;
+        }).catch(err => {
+            console.error("Erro ao limpar scanner:", err);
+            scannerIniciado = false;
+        });
 
         enviarConsulta(codigo);
     }
@@ -134,11 +168,9 @@
             priceSection.style.display = 'block';
             setTimeout(() => document.getElementById('inputPreco').focus(), 100);
         } else if (res.status === "salvo") {
-            // Feedback de sucesso e reset sem reload
             resultDiv.className = 'success';
             resultDiv.innerHTML = "✅ Preço salvo com sucesso!";
             
-            // Incremento visual imediato
             atualizarProgressoManual();
             
             setTimeout(() => resetarApp(), 1500);
@@ -150,23 +182,21 @@
     }
 
     function salvarPreco() {
-    let p1Raw = document.getElementById('inputPreco').value;
-    let p2Raw = document.getElementById('inputPreco2').value;
+        let p1Raw = document.getElementById('inputPreco').value;
+        let p2Raw = document.getElementById('inputPreco2').value;
 
-    let p1 = p1Raw.replace("R$", "").trim().replace(/\./g, "");
-    let p2 = p2Raw.replace("R$", "").trim().replace(/\./g, "");
-    
-    if(!p1 || p1 === "0,00") {
-        alert("Digite ao menos o preço normal!");
-        return;
+        let p1 = p1Raw.replace("R$", "").trim().replace(/\./g, "").replace(",", ".");
+        let p2 = p2Raw.replace("R$", "").trim().replace(/\./g, "").replace(",", ".");
+        
+        if(!p1 || p1 === "0.00") {
+            alert("Digite ao menos o preço de varejo!");
+            return;
+        }
+
+        document.getElementById('result').innerHTML = "⏳ Gravando na planilha...";
+        chamadaJSONP(`${URL_SCRIPT}?barcode=${encodeURIComponent(codigoAtual)}&preco=${encodeURIComponent(p1)}&preco2=${encodeURIComponent(p2)}&callback=retornoGoogle`, 'save-request');
     }
 
-    document.getElementById('result').innerHTML = "⏳ Gravando na planilha...";
-    // Enviando os dois preços na URL
-    chamadaJSONP(`${URL_SCRIPT}?barcode=${encodeURIComponent(codigoAtual)}&preco=${encodeURIComponent(p1)}&preco2=${encodeURIComponent(p2)}&callback=retornoGoogle`, 'save-request');
-}
-
-    // MELHORIA: Função genérica para chamadas JSONP (mais limpo)
     function chamadaJSONP(url, id) {
         const oldScript = document.getElementById(id);
         if (oldScript) oldScript.remove();
@@ -181,18 +211,17 @@
         document.body.appendChild(script);
     }
 
-    // MELHORIA: Resetar App sem recarregar a página (MUITO mais rápido)
     function resetarApp() {
-    document.getElementById('formSection').style.display = 'none';
-    document.getElementById('priceSection').style.display = 'none';
-    document.getElementById('result').style.display = 'none';
-    document.getElementById('inputManual').value = "";
-    document.getElementById('inputPreco').value = "";
-    document.getElementById('inputPreco2').value = ""; // Limpa o segundo campo
-    document.getElementById('scannerArea').style.display = 'block';
-    
-    if (!scannerIniciado) iniciarCamera();
-}
+        document.getElementById('formSection').style.display = 'none';
+        document.getElementById('priceSection').style.display = 'none';
+        document.getElementById('result').style.display = 'none';
+        document.getElementById('inputManual').value = "";
+        document.getElementById('inputPreco').value = "";
+        document.getElementById('inputPreco2').value = "";
+        document.getElementById('scannerArea').style.display = 'flex';
+        
+        iniciarCamera();
+    }
 
     function atualizarInterfaceProgresso(stats) {
         if (!stats || stats.total === 0) return;
@@ -209,7 +238,6 @@
         atualizarInterfaceProgresso(stats);
     }
 
-    // Inicialização
     window.addEventListener('load', () => {
         iniciarCamera();
         
@@ -222,12 +250,11 @@
     });
 
     VMasker(document.getElementById("inputPreco")).maskMoney({
-    precision: 2, separator: ',', delimiter: '.', unit: 'R$', zeroCents: false
-});
-// Nova máscara para o segundo campo
-VMasker(document.getElementById("inputPreco2")).maskMoney({
-    precision: 2, separator: ',', delimiter: '.', unit: 'R$', zeroCents: false
-});
+        precision: 2, separator: ',', delimiter: '.', unit: 'R$', zeroCents: false
+    });
+    VMasker(document.getElementById("inputPreco2")).maskMoney({
+        precision: 2, separator: ',', delimiter: '.', unit: 'R$', zeroCents: false
+    });
 </script>
 </body>
 </html>

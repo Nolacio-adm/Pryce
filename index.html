@@ -260,20 +260,25 @@
     }
 
     function salvarPreco() {
-        let p1Raw = document.getElementById('inputPreco').value;
-        let p2Raw = document.getElementById('inputPreco2').value;
+    let p1Raw = document.getElementById('inputPreco').value;
+    let p2Raw = document.getElementById('inputPreco2').value;
 
-        let p1 = p1Raw.replace("R$", "").trim().replace(/\./g, "").replace(",", ".");
-        let p2 = p2Raw.replace("R$", "").trim().replace(/\./g, "").replace(",", ".");
-        
-        if(!p1 || p1 === "0.00") {
-            alert("Digite ao menos o preço de varejo!");
-            return;
-        }
+    // Remove apenas o R$ e espaços, mantendo a vírgula decimal
+    let p1 = p1Raw.replace("R$", "").trim();
+    let p2 = p2Raw.replace("R$", "").trim();
 
-        document.getElementById('result').innerHTML = "⏳ Gravando na planilha...";
-        chamadaJSONP(`${URL_SCRIPT}?barcode=${encodeURIComponent(codigoAtual)}&preco=${encodeURIComponent(p1)}&preco2=${encodeURIComponent(p2)}&callback=retornoGoogle`, 'save-request');
+    if (!p1 || p1 === "0,00" || p1 === "0") {
+        alert("Digite ao menos o preço de varejo!");
+        return;
     }
+
+    document.getElementById('result').innerHTML = "⏳ Gravando na planilha...";
+
+    chamadaJSONP(
+        `${URL_SCRIPT}?barcode=${encodeURIComponent(codigoAtual)}&preco=${encodeURIComponent(p1)}&preco2=${encodeURIComponent(p2)}&callback=retornoGoogle`,
+        'save-request'
+    );
+}
 
     function chamadaJSONP(url, id) {
         const oldScript = document.getElementById(id);
